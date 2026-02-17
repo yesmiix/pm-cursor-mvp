@@ -183,6 +183,9 @@ export default function BacklogPage() {
               <Link href="/backlog" className={`rounded-md px-2 py-1 transition ${linkClass("/backlog")}`}>
                 Backlog
               </Link>
+              <Link href="/feedback" className={`rounded-md px-2 py-1 transition ${linkClass("/feedback")}`}>
+                User Feedback
+              </Link>
             </nav>
             <button
               type="button"

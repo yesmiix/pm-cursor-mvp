@@ -12,6 +12,7 @@
 - [ ] Страница с документацией/FAQ прямо в продукте (с выжимкой из `DOCS.md`).
 
 ## Done
+- [x] User Feedback: страница /feedback — сегменты, raw entries, User pains (LLM), Generate JTBD feedback, Save as raw, Export JSON; хранение fb:*, промпты FEEDBACK_PROMPTS.md.
 - [x] Backlog: страница /backlog с колонками (Backlog, To Do, In Progress, Done), добавление/перемещение/удаление карточек, кнопка Generate по документу из /kb, промпт в BACKLOG_GENERATE_PROMPT.md.
 - [x] One-doc RAG MVP: /kb (документ), /ask (вопрос по документу), API kb/set, kb/get, kb/clear, ask.
 - [x] Базовый UI для загрузки макетов + текстовый запрос.

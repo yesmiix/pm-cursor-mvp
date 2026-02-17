@@ -1,5 +1,15 @@
 # Changelog
 
+## [2026-02-17] v0.7
+- **User Feedback** (`/feedback`): сбор сырого фидбека по сегментам, автоматическая группировка, генерация «симулированного» JTBD-отзыва от выбранного сегмента.
+- Сегменты: список с названием, описанием, счётчиком отзывов; по умолчанию 3 шаблона (новый пользователь, регулярный, пауэр-юзер); при первом открытии — seed entries (2–3 демо-записи с source=seed).
+- User pains: 3–7 буллетов по сырым отзывам сегмента (LLM); при &lt; 3 записях — сообщение «добавьте ещё фидбек».
+- Generate JTBD feedback: один отзыв в формате Job, Situation, Motivation, Desired outcome, Frictions, Quote (+ confidence, basedOn); кнопка «Save as raw feedback».
+- Raw data: таблица записей по сегменту (дата, источник, цитата, теги, view), форма добавления (textarea + источник + save), Export JSON.
+- Хранение: `fb:segments`, `fb:entries` в том же KV/in-memory; промпты в `FEEDBACK_PROMPTS.md` (секции Pains и JTBD).
+- API: GET/POST `/api/feedback/segments`, GET/POST `/api/feedback/entries`, GET `/api/feedback/pains?segmentId=`, POST `/api/feedback/generate` (body: segmentId).
+- Файлы: `lib/feedback-types.ts`, `lib/feedback-storage.ts`, `lib/feedback-prompts.ts`, `app/feedback/page.tsx`, `app/api/feedback/*`, `FEEDBACK_PROMPTS.md`. Ссылка User Feedback в навигации на всех страницах.
+
 ## [2026-02-17] v0.6
 - Документация обновлена: DOCS.md (Backlog в TL;DR, урлы, раздел 2.4 Backlog Generate, версия v0.6), RUNBOOK (проверка /backlog при деплое).
 - Страница **Backlog** (`/backlog`): карточки в стиле JIRA с колонками Backlog / To Do / In Progress / Done.

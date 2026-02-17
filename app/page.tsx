@@ -289,6 +289,20 @@ export default function Home() {
                 >
                   Backlog
                 </Link>
+                <Link
+                  href="/feedback"
+                  className={`rounded-md px-2 py-1 transition ${
+                    pathname?.startsWith("/feedback")
+                      ? theme === "dark"
+                        ? "bg-zinc-800 text-zinc-50"
+                        : "bg-zinc-900 text-zinc-50"
+                      : theme === "dark"
+                        ? "text-zinc-300 hover:bg-zinc-800/80"
+                        : "text-zinc-600 hover:bg-zinc-100"
+                  }`}
+                >
+                  User Feedback
+                </Link>
               </nav>
               <button
                 type="button"

@@ -9,11 +9,11 @@
 - **Для кого:** продуктовые менеджеры, дизайнеры и разработчики, которым нужно быстро формализовать дизайн‑задачу по уже существующим макетам и задавать вопросы по документу о продукте.
 - **Главная ценность:** быстрый дизайн‑бриф из LLM по макетам; RAG: ответы на вопросы строго по загруженному документу (чанки + эмбеддинги + retrieval).
 - **Что уже работает:** загрузка 1–10 изображений, текстовый запрос, `/api/design`; **User Segments** (`/user-segments`) — таблица сегментов внизу; **One-doc RAG** (`/kb`, `/ask`): чанки, эмбеддинги, ответы по контексту; **Backlog** (`/backlog`): карточки со статусами (Backlog / To Do / In Progress / Done), добавление/перемещение/удаление, кнопка Generate по документу из `/kb` (промпт в `BACKLOG_GENERATE_PROMPT.md`).
-- **Где UI:** `/` (Design Brief), `/user-segments`, `/kb`, `/ask`, `/backlog`. App Router, Next.js 16, React 19.
-- **Где API:** `POST /api/design`, `POST /api/user-segments`; RAG: `POST /api/kb/set`, `GET /api/kb/get`, `POST /api/kb/clear`, `POST /api/ask`; Backlog: `POST /api/backlog/generate` (документ из storage + промпт из файла).
+- **Где UI:** `/` (Design Brief), `/user-segments`, `/kb`, `/ask`, `/backlog`, `/feedback`. App Router, Next.js 16, React 19.
+- **Где API:** `POST /api/design`, `POST /api/user-segments`; RAG: `POST /api/kb/set`, `GET /api/kb/get`, `POST /api/kb/clear`, `POST /api/ask`; Backlog: `POST /api/backlog/generate`; User Feedback: `GET/POST /api/feedback/segments`, `GET/POST /api/feedback/entries`, `GET /api/feedback/pains`, `POST /api/feedback/generate`.
 - **Где живёт прод:** Vercel. Данные RAG: при наличии KV_REST_API_* — Vercel KV; иначе in-memory (на проде без KV документ не персистится между запросами).
 - **Что НЕ делаем:** нет полноценной истории чатов, нет аутентификации; RAG — один общий документ без привязки к пользователю.
-- **Версия сейчас:** см. последнюю запись в `CHANGELOG.md` (на момент редактирования — `v0.6` от 2026‑02‑17).
+- **Версия сейчас:** см. последнюю запись в `CHANGELOG.md` (на момент редактирования — `v0.7` от 2026‑02‑17).
 
 ---
 
@@ -63,6 +63,7 @@ kill <PID>
 - `/kb` — База знаний: загрузка одного документа (title + content), кнопки «Сохранить документ» и «Удалить документ».
 - `/ask` — Спросить: вопрос по документу, ответ и блок «использованный контекст» (чанки с score).
 - `/backlog` — Backlog: колонки Backlog / To Do / In Progress / Done, карточки фич, добавление/перемещение/удаление, кнопка Generate (анализ документа из `/kb`, промпт — `BACKLOG_GENERATE_PROMPT.md`). Карточки в `localStorage`.
+- `/feedback` — User Feedback: сегменты (список + счётчик), выбор сегмента; User pains (LLM); Generate JTBD feedback; raw data (таблица + добавление), Export JSON. Хранение `fb:segments`, `fb:entries` (KV/in-memory), промпты `FEEDBACK_PROMPTS.md`.
 - `POST /api/design` — эндпоинт: `featureRequest` + массив `images` (dataURL).
 - `POST /api/user-segments` — эндпоинт: `context` (описание продукта), промпт из `USER_SEGMENTS_PROMPT.md`.
 - `POST /api/kb/set` — тело `{ title, content }`: чанки, эмбеддинги, сохранение в хранилище.
@@ -70,6 +71,7 @@ kill <PID>
 - `POST /api/kb/clear` — удаление документа, чанков, эмбеддингов.
 - `POST /api/ask` — тело `{ question }`: retrieval (topK чанков), ответ LLM по контексту.
 - `POST /api/backlog/generate` — без тела: читает документ из storage (База знаний), системный промпт из `BACKLOG_GENERATE_PROMPT.md`, возвращает `{ ok, features: [{ title, description }] }`. Требуется предварительно сохранить документ на `/kb`.
+- `GET /api/feedback/segments` — список сегментов с счётчиком; при пустой базе — дефолтные сегменты + seed entries. `POST /api/feedback/segments` — создать сегмент. `GET /api/feedback/entries?segmentId=` — записи по сегменту. `POST /api/feedback/entries` — добавить запись. `GET /api/feedback/pains?segmentId=` — боли (LLM). `POST /api/feedback/generate` — тело `{ segmentId }`, ответ `{ ok, simulation }` (JTBD).
 
 ---
 
@@ -124,7 +126,14 @@ kill <PID>
 ### 2.4. Backend (Backlog Generate)
 - **Генерация фич** (`app/api/backlog/generate/route.ts`): без body. Читает документ из `storage.getDoc()`; если нет — 400. Системный промпт из `BACKLOG_GENERATE_PROMPT.md` (кэш в памяти). User‑сообщение — название и содержание документа. Вызов `chat()` из `lib/llm.ts`. Парсинг JSON из ответа (`features: [{ title, description }]`), возврат клиенту. Карточки на фронте сохраняются в `localStorage` (страница `/backlog`).
 
-### 2.5. Конфиг и стили
+### 2.5. Backend (User Feedback)
+- **Хранилище** (`lib/feedback-storage.ts`): ключи `fb:segments`, `fb:entries` (тот же KV/in-memory). Дефолтные сегменты (3) и seed entries при первой загрузке. Типы в `lib/feedback-types.ts` (Segment, FeedbackEntry, JTBDFeedback).
+- **Сегменты:** GET возвращает список с счётчиком (ensureSegmentsAndSeed); POST — создание сегмента.
+- **Записи:** GET с `segmentId` — фильтр по сегменту; POST — appendEntry (segmentId, text, source, tags?).
+- **Боли:** GET `/api/feedback/pains?segmentId=` — промпт из `FEEDBACK_PROMPTS.md` (секция Pains), LLM суммаризация сырых цитат в 3–7 пунктов, ответ `{ pains: string[] }`. При &lt; 3 записях — message без вызова LLM.
+- **JTBD:** POST `/api/feedback/generate` (body: segmentId) — до 20 последних entries, промпт JTBD из файла, ответ JSON (job, situation, motivation, desiredOutcome, frictions, quote, confidence, basedOn). При &lt; 2 записях — 400.
+
+### 2.6. Конфиг и стили
 - `globals.css`:
   - Tailwind (`@import "tailwindcss"`).
   - CSS‑переменные `--background` / `--foreground`, маппинг на Tailwind‑тему.
@@ -157,7 +166,7 @@ kill <PID>
 
 ## 4) Текущее состояние (state snapshot)
 
-- **Версия:** см. последнюю запись в `CHANGELOG.md` (сейчас `v0.6`).
+- **Версия:** см. последнюю запись в `CHANGELOG.md` (сейчас `v0.7`).
 - **Последний деплой:** прод на Vercel, ветка `main` (URL — в настройках Vercel‑проекта).
 - **Известные проблемы:**
   - Большие base64‑payload с изображениями могут не помещаться в лимиты Vercel/LLM‑провайдера.

@@ -50,6 +50,13 @@
   - Карточки в стиле JIRA с колонками: Backlog, To Do, In Progress, Done. Добавление карточек (название + описание), перемещение между статусами, удаление. Хранение в `localStorage`.
   - Кнопка **Generate**: анализ документа из Базы знаний и создание предложенных топ-фич как карточек в Backlog. Промпт настройки — файл `BACKLOG_GENERATE_PROMPT.md` (редактируется админом).
 
+- **User Feedback** (страница `/feedback`)
+  - Сегменты пользователей (по умолчанию 3 шаблона: новый / регулярный / пауэр-юзер), счётчик отзывов по сегменту. Выбор сегмента кликом.
+  - **User pains**: 3–7 болей/потребностей по сырым отзывам сегмента (LLM). При недостатке данных — сообщение «добавьте ещё фидбек».
+  - **Generate JTBD feedback**: симулированный отзыв от лица сегмента (Job, Situation, Motivation, Desired outcome, Frictions, Quote); можно сохранить как raw feedback.
+  - **Raw data**: таблица записей по сегменту (дата, источник, цитата, теги, view), добавление вручную (textarea + источник + save), кнопка Export JSON.
+  - Хранение: `fb:segments`, `fb:entries` в том же KV/in-memory. Промпты — `FEEDBACK_PROMPTS.md` (секции Pains и JTBD).
+
 ---
 
 ## Стек
@@ -69,8 +76,8 @@ npm run dev
 ```
 
 - Открой в браузере URL из вывода команды (обычно `http://localhost:3000`). Если порт 3000 занят, Next.js выведет другой порт, например `http://localhost:3001` — открой его.
-- Основная логика UI: `app/page.tsx` (Design Brief), `app/kb/page.tsx`, `app/ask/page.tsx`, `app/user-segments/page.tsx`.
-- API: `app/api/design/route.ts`, `app/api/kb/*`, `app/api/ask/route.ts`, `app/api/user-segments/route.ts`.
+- Основная логика UI: `app/page.tsx`, `app/kb/page.tsx`, `app/ask/page.tsx`, `app/user-segments/page.tsx`, `app/backlog/page.tsx`, `app/feedback/page.tsx`.
+- API: `app/api/design/route.ts`, `app/api/kb/*`, `app/api/ask/route.ts`, `app/api/user-segments/route.ts`, `app/api/backlog/generate/route.ts`, `app/api/feedback/segments/route.ts`, `app/api/feedback/entries/route.ts`, `app/api/feedback/pains/route.ts`, `app/api/feedback/generate/route.ts`.
 
 ---
 
@@ -146,6 +153,7 @@ kill <PID>
 - **POST /api/kb/clear** — удаляет документ, чанки и эмбеддинги. Ответ: `{ ok }`.
 - **POST /api/ask** — тело `{ question: string }`. Retrieval (topK чанков по косинусному сходству) + ответ LLM по контексту. Ответ: `{ ok, answer, chunks: { content, score }[] }` или `{ ok: false, error }`.
 - **POST /api/backlog/generate** — без тела. Читает документ из Базы знаний, вызывает LLM с промптом из `BACKLOG_GENERATE_PROMPT.md`, возвращает `{ ok, features: { title, description }[] }` или `{ ok: false, error }`. Требуется предварительно сохранить документ на `/kb`.
+- **User Feedback:** `GET /api/feedback/segments` — список сегментов с счётчиком (при пустой базе — дефолты + seed). `POST /api/feedback/segments` — создать сегмент. `GET /api/feedback/entries?segmentId=` — записи. `POST /api/feedback/entries` — добавить запись. `GET /api/feedback/pains?segmentId=` — боли (LLM). `POST /api/feedback/generate` — тело `{ segmentId }`, ответ `{ ok, simulation }` (JTBD). Промпты в `FEEDBACK_PROMPTS.md`.
 
 ---
 
@@ -159,7 +167,10 @@ kill <PID>
 - `app/kb/page.tsx` — страница «База знаний»: загрузка/удаление документа.
 - `app/ask/page.tsx` — страница «Спросить»: вопрос по документу, ответ и контекст.
 - `app/backlog/page.tsx` — Backlog: колонки статусов, карточки, Generate по документу.
+- `app/feedback/page.tsx` — User Feedback: сегменты, боли, Generate JTBD, raw data, добавление записей.
 - `app/api/kb/set/route.ts`, `app/api/kb/get/route.ts`, `app/api/kb/clear/route.ts` — API базы знаний.
+- `app/api/feedback/segments/route.ts`, `app/api/feedback/entries/route.ts`, `app/api/feedback/pains/route.ts`, `app/api/feedback/generate/route.ts` — API User Feedback.
+- `lib/feedback-types.ts`, `lib/feedback-storage.ts`, `lib/feedback-prompts.ts` — типы, хранилище fb:*, загрузка промптов из `FEEDBACK_PROMPTS.md`.
 - `app/api/ask/route.ts` — API RAG: retrieval + ответ по документу.
 - `app/api/backlog/generate/route.ts` — API генерации фич по документу (промпт из `BACKLOG_GENERATE_PROMPT.md`).
 - `BACKLOG_GENERATE_PROMPT.md` — промпт для анализа документа и предложения топ-фич (редактируется админом).
