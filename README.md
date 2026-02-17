@@ -46,6 +46,10 @@
   - **База знаний (`/kb`)**: загрузка одного документа (textarea + название), кнопки «Сохранить документ» и «Удалить документ». Документ чанкуется, эмбеддинги строятся и сохраняются (Vercel KV или in-memory при отсутствии KV).
   - **Спросить (`/ask`)**: поле вопроса, кнопка «Спросить», ответ и блок «использованный контекст» (найденные чанки с score). Ответы строго по документу; если информации нет — модель говорит об этом.
 
+- **Backlog** (страница `/backlog`)
+  - Карточки в стиле JIRA с колонками: Backlog, To Do, In Progress, Done. Добавление карточек (название + описание), перемещение между статусами, удаление. Хранение в `localStorage`.
+  - Кнопка **Generate**: анализ документа из Базы знаний и создание предложенных топ-фич как карточек в Backlog. Промпт настройки — файл `BACKLOG_GENERATE_PROMPT.md` (редактируется админом).
+
 ---
 
 ## Стек
@@ -64,9 +68,9 @@ npm install
 npm run dev
 ```
 
-- Открой `http://localhost:3000`.
-- Основная логика UI в `app/page.tsx`.
-- API‑роут находится в `app/api/design/route.ts`.
+- Открой в браузере URL из вывода команды (обычно `http://localhost:3000`). Если порт 3000 занят, Next.js выведет другой порт, например `http://localhost:3001` — открой его.
+- Основная логика UI: `app/page.tsx` (Design Brief), `app/kb/page.tsx`, `app/ask/page.tsx`, `app/user-segments/page.tsx`.
+- API: `app/api/design/route.ts`, `app/api/kb/*`, `app/api/ask/route.ts`, `app/api/user-segments/route.ts`.
 
 ---
 
@@ -141,6 +145,7 @@ kill <PID>
 - **GET /api/kb/get** — возвращает текущий документ и мету: `{ ok, doc: { title, content, updatedAt } | null, meta: { chunksCount } }`.
 - **POST /api/kb/clear** — удаляет документ, чанки и эмбеддинги. Ответ: `{ ok }`.
 - **POST /api/ask** — тело `{ question: string }`. Retrieval (topK чанков по косинусному сходству) + ответ LLM по контексту. Ответ: `{ ok, answer, chunks: { content, score }[] }` или `{ ok: false, error }`.
+- **POST /api/backlog/generate** — без тела. Читает документ из Базы знаний, вызывает LLM с промптом из `BACKLOG_GENERATE_PROMPT.md`, возвращает `{ ok, features: { title, description }[] }` или `{ ok: false, error }`. Требуется предварительно сохранить документ на `/kb`.
 
 ---
 
@@ -153,8 +158,11 @@ kill <PID>
 - `app/api/user-segments/route.ts` — серверный эндпоинт сегментации (промпт из `USER_SEGMENTS_PROMPT.md`).
 - `app/kb/page.tsx` — страница «База знаний»: загрузка/удаление документа.
 - `app/ask/page.tsx` — страница «Спросить»: вопрос по документу, ответ и контекст.
+- `app/backlog/page.tsx` — Backlog: колонки статусов, карточки, Generate по документу.
 - `app/api/kb/set/route.ts`, `app/api/kb/get/route.ts`, `app/api/kb/clear/route.ts` — API базы знаний.
 - `app/api/ask/route.ts` — API RAG: retrieval + ответ по документу.
+- `app/api/backlog/generate/route.ts` — API генерации фич по документу (промпт из `BACKLOG_GENERATE_PROMPT.md`).
+- `BACKLOG_GENERATE_PROMPT.md` — промпт для анализа документа и предложения топ-фич (редактируется админом).
 - `lib/chunk.ts`, `lib/cosine.ts`, `lib/llm.ts`, `lib/storage.ts` — утилиты для чанкинга, эмбеддингов, LLM и хранилища (KV / in-memory).
 - `globals.css` — базовые стили и интеграция Tailwind.
 - `DOCS.md` — подробный контекст проекта и правила для агентов.

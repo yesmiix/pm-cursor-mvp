@@ -168,6 +168,9 @@ export default function KbPage() {
                 <Link href="/ask" className={`rounded-md px-2 py-1 transition ${linkClass("/ask")}`}>
                   Спросить
                 </Link>
+                <Link href="/backlog" className={`rounded-md px-2 py-1 transition ${linkClass("/backlog")}`}>
+                  Backlog
+                </Link>
               </nav>
               <button
                 type="button"

@@ -12,6 +12,7 @@
 - [ ] Страница с документацией/FAQ прямо в продукте (с выжимкой из `DOCS.md`).
 
 ## Done
+- [x] Backlog: страница /backlog с колонками (Backlog, To Do, In Progress, Done), добавление/перемещение/удаление карточек, кнопка Generate по документу из /kb, промпт в BACKLOG_GENERATE_PROMPT.md.
 - [x] One-doc RAG MVP: /kb (документ), /ask (вопрос по документу), API kb/set, kb/get, kb/clear, ask.
 - [x] Базовый UI для загрузки макетов + текстовый запрос.
 - [x] Серверный эндпоинт `/api/design`, совместимый с OpenAI `chat/completions`.
