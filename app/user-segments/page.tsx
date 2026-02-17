@@ -266,6 +266,34 @@ export default function UserSegmentsPage() {
                 >
                   User Segments
                 </Link>
+                <Link
+                  href="/kb"
+                  className={`rounded-md px-2 py-1 transition ${
+                    pathname?.startsWith("/kb")
+                      ? theme === "dark"
+                        ? "bg-zinc-800 text-zinc-50"
+                        : "bg-zinc-900 text-zinc-50"
+                      : theme === "dark"
+                        ? "text-zinc-300 hover:bg-zinc-800/80"
+                        : "text-zinc-600 hover:bg-zinc-100"
+                  }`}
+                >
+                  База знаний
+                </Link>
+                <Link
+                  href="/ask"
+                  className={`rounded-md px-2 py-1 transition ${
+                    pathname?.startsWith("/ask")
+                      ? theme === "dark"
+                        ? "bg-zinc-800 text-zinc-50"
+                        : "bg-zinc-900 text-zinc-50"
+                      : theme === "dark"
+                        ? "text-zinc-300 hover:bg-zinc-800/80"
+                        : "text-zinc-600 hover:bg-zinc-100"
+                  }`}
+                >
+                  Спросить
+                </Link>
               </nav>
               <button
                 type="button"

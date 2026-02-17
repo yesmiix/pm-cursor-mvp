@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-02-17] v0.5
+- One-doc RAG MVP: страницы `/kb` (загрузка/удаление документа) и `/ask` (вопрос по документу, ответ + контекст).
+- API: POST /api/kb/set, GET /api/kb/get, POST /api/kb/clear, POST /api/ask.
+- Утилиты: lib/chunk.ts, lib/cosine.ts, lib/llm.ts (embeddings + chat), lib/storage.ts (Vercel KV или in-memory fallback).
+- Чанки ~800–1200 символов, overlap 150; topK=6 для retrieval; ответы строго по документу.
+- Добавлены .env.example (LLM_*, EMBEDDING_MODEL, KV_*), обновлены README и навигация (ссылки на База знаний и Спросить).
+- Зависимость: @vercel/kv для продакшена; без KV — in-memory только для локальной разработки.
+
 ## [2026-02-17] v0.4
 - На странице User Segments вывод сегментов перенесён вниз страницы (полная ширина).
 - Ответ LLM парсится на фронте: из markdown‑таблицы извлекаются сегменты (название, описание, JTBD, %).

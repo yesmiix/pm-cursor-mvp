@@ -42,6 +42,10 @@
   - При неудачном парсинге показывается сырой текст ответа.
   - Панель чатов слева и поле ввода в чате (пока без отправки).
 
+- **One-doc RAG** (страницы `/kb` и `/ask`)
+  - **База знаний (`/kb`)**: загрузка одного документа (textarea + название), кнопки «Сохранить документ» и «Удалить документ». Документ чанкуется, эмбеддинги строятся и сохраняются (Vercel KV или in-memory при отсутствии KV).
+  - **Спросить (`/ask`)**: поле вопроса, кнопка «Спросить», ответ и блок «использованный контекст» (найденные чанки с score). Ответы строго по документу; если информации нет — модель говорит об этом.
+
 ---
 
 ## Стек
@@ -84,21 +88,15 @@ kill <PID>
 
 ---
 
-## Конфигурация LLM (env)
+## Конфигурация (env)
 
-В `.env.local` и в настройках Vercel‑проекта должны быть заданы:
+Скопируйте `.env.example` в `.env.local` и заполните значения. В настройках Vercel‑проекта задайте те же переменные.
 
 - `LLM_API_KEY` — ключ к LLM‑провайдеру.
 - `LLM_BASE_URL` — базовый URL OpenAI‑совместимого API (`https://api.openai.com/v1` или ваш прокси).
-- `LLM_MODEL` — идентификатор модели (опционально, по умолчанию `"gpt-4o-mini"`).
-
-`.env.local`:
-
-```bash
-LLM_API_KEY=...
-LLM_BASE_URL=...
-LLM_MODEL=gpt-4o-mini
-```
+- `LLM_MODEL` — модель для чата (по умолчанию `gpt-4o-mini`).
+- `EMBEDDING_MODEL` — модель для эмбеддингов RAG (по умолчанию `text-embedding-3-small`).
+- `KV_REST_API_URL`, `KV_REST_API_TOKEN` — опционально для Vercel KV. Без них RAG хранит документ/чанки/эмбеддинги **in-memory** (подходит только для локальной разработки; на проде нужен KV или другое хранилище, например Supabase).
 
 Файл `.env.local` **никогда не коммитится** (см. `.gitignore`).
 
@@ -137,6 +135,15 @@ LLM_MODEL=gpt-4o-mini
 
 ---
 
+## API: One-doc RAG
+
+- **POST /api/kb/set** — тело `{ title: string, content: string }`. Чанкует документ, строит эмбеддинги, сохраняет. Ответ: `{ ok, chunksCount?, warning? }`.
+- **GET /api/kb/get** — возвращает текущий документ и мету: `{ ok, doc: { title, content, updatedAt } | null, meta: { chunksCount } }`.
+- **POST /api/kb/clear** — удаляет документ, чанки и эмбеддинги. Ответ: `{ ok }`.
+- **POST /api/ask** — тело `{ question: string }`. Retrieval (topK чанков по косинусному сходству) + ответ LLM по контексту. Ответ: `{ ok, answer, chunks: { content, score }[] }` или `{ ok: false, error }`.
+
+---
+
 ## Структура проекта (основное)
 
 - `app/layout.tsx` — корневой layout, подключение шрифтов и `globals.css`.
@@ -144,6 +151,11 @@ LLM_MODEL=gpt-4o-mini
 - `app/user-segments/page.tsx` — UI User Segments (форма, парсинг markdown‑таблицы, таблица сегментов внизу).
 - `app/api/design/route.ts` — серверный эндпоинт, обёртка над LLM.
 - `app/api/user-segments/route.ts` — серверный эндпоинт сегментации (промпт из `USER_SEGMENTS_PROMPT.md`).
+- `app/kb/page.tsx` — страница «База знаний»: загрузка/удаление документа.
+- `app/ask/page.tsx` — страница «Спросить»: вопрос по документу, ответ и контекст.
+- `app/api/kb/set/route.ts`, `app/api/kb/get/route.ts`, `app/api/kb/clear/route.ts` — API базы знаний.
+- `app/api/ask/route.ts` — API RAG: retrieval + ответ по документу.
+- `lib/chunk.ts`, `lib/cosine.ts`, `lib/llm.ts`, `lib/storage.ts` — утилиты для чанкинга, эмбеддингов, LLM и хранилища (KV / in-memory).
 - `globals.css` — базовые стили и интеграция Tailwind.
 - `DOCS.md` — подробный контекст проекта и правила для агентов.
 - `RUNBOOK.md` — как расследовать и чинить проблемы на проде.
