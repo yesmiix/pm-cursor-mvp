@@ -4,134 +4,32 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useState } from "react";
 
-type DesignResponse = {
+type SegmentsResponse = {
   ok: boolean;
   result?: string;
   error?: string;
 };
 
-export default function Home() {
-  const [files, setFiles] = useState<FileList | null>(null);
-  const [featureRequest, setFeatureRequest] = useState("");
+export default function UserSegmentsPage() {
+  const [input, setInput] = useState("");
   const [result, setResult] = useState("");
   const [error, setError] = useState("");
-  const [isDesigning, setIsDesigning] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [chats, setChats] = useState<{ id: number; title: string }[]>([
-    { id: 1, title: "Новый чат" },
+    { id: 1, title: "Segment chat 1" },
   ]);
   const [activeChatId, setActiveChatId] = useState(1);
   const [chatCounter, setChatCounter] = useState(1);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const pathname = usePathname();
 
-  const handleFilesChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      setError("");
-      const fileList = event.target.files;
-      if (!fileList) {
-        setFiles(null);
-        return;
-      }
-
-      if (fileList.length === 0) {
-        setFiles(null);
-        setError("Добавьте хотя бы одно изображение.");
-        return;
-      }
-
-      if (fileList.length > 10) {
-        setFiles(null);
-        setError("Можно загрузить от 1 до 10 изображений.");
-        return;
-      }
-
-      setFiles(fileList);
-    },
-    [],
-  );
-
-  const filesToDataUrls = useCallback(async (fileList: FileList) => {
-    const readers: Promise<string>[] = [];
-
-    Array.from(fileList).forEach((file) => {
-      readers.push(
-        new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const result = reader.result;
-            if (typeof result === "string") {
-              resolve(result);
-            } else {
-              reject(new Error("Не удалось прочитать файл как dataURL."));
-            }
-          };
-          reader.onerror = () => {
-            reject(new Error("Ошибка чтения файла."));
-          };
-          reader.readAsDataURL(file);
-        }),
-      );
-    });
-
-    return Promise.all(readers);
-  }, []);
-
-  const handleDesign = useCallback(async () => {
-    setError("");
-    setResult("");
-
-    if (!featureRequest.trim()) {
-      setError("Заполните описание запроса (featureRequest).");
-      return;
-    }
-
-    if (!files || files.length === 0) {
-      setError("Добавьте хотя бы одно изображение.");
-      return;
-    }
-
-    setIsDesigning(true);
-    try {
-      const images = await filesToDataUrls(files);
-
-      const response = await fetch("/api/design", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          featureRequest,
-          images,
-        }),
-      });
-
-      const data: DesignResponse = await response.json();
-
-      if (!response.ok || !data.ok) {
-        setError(
-          data.error ??
-            "Не удалось получить ответ от дизайнера. Попробуйте еще раз.",
-        );
-        return;
-      }
-
-      setResult(data.result ?? "");
-    } catch (err) {
-      console.error(err);
-      setError("Произошла непредвиденная ошибка. Попробуйте еще раз.");
-    } finally {
-      setIsDesigning(false);
-    }
-  }, [featureRequest, files, filesToDataUrls]);
-
   const handleNewChat = useCallback(() => {
     const nextId = chatCounter + 1;
     setChatCounter(nextId);
-    setChats((prev) => [...prev, { id: nextId, title: `Чат ${nextId}` }]);
+    setChats((prev) => [...prev, { id: nextId, title: `Segment chat ${nextId}` }]);
     setActiveChatId(nextId);
 
-    setFiles(null);
-    setFeatureRequest("");
+    setInput("");
     setResult("");
     setError("");
   }, [chatCounter]);
@@ -140,12 +38,50 @@ export default function Home() {
     setActiveChatId(id);
   }, []);
 
+  const handleGenerate = useCallback(async () => {
+    setError("");
+    setResult("");
+
+    if (!input.trim()) {
+      setError("Опишите продукт или задачу, для которой нужны сегменты.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/user-segments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          context: input,
+        }),
+      });
+
+      const data: SegmentsResponse = await response.json();
+
+      if (!response.ok || !data.ok) {
+        setError(
+          data.error ??
+            "Не удалось сгенерировать пользовательские сегменты. Попробуйте ещё раз.",
+        );
+        return;
+      }
+
+      setResult(data.result ?? "");
+    } catch (err) {
+      console.error(err);
+      setError("Произошла непредвиденная ошибка. Попробуйте ещё раз.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [input]);
+
   return (
     <div
       className={`flex min-h-screen px-4 py-4 font-sans text-sm transition-colors ${
-        theme === "dark"
-          ? "bg-zinc-950 text-zinc-50"
-          : "bg-white text-zinc-900"
+        theme === "dark" ? "bg-zinc-950 text-zinc-50" : "bg-white text-zinc-900"
       }`}
     >
       <div className="mx-auto flex w-full max-w-6xl gap-3">
@@ -156,7 +92,7 @@ export default function Home() {
         >
           <div className="mb-3 flex items-center justify-between gap-2 px-2">
             <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-zinc-500">
-              Workspace
+              Segments
             </span>
             <button
               type="button"
@@ -206,15 +142,15 @@ export default function Home() {
           >
             <div>
               <h1 className="text-[26px] font-semibold tracking-tight">
-                PM Cursor MVP
+                User Segments
               </h1>
               <p
                 className={`mt-1 text-xs ${
                   theme === "dark" ? "text-zinc-400" : "text-zinc-500"
                 }`}
               >
-                Загрузите макеты и опишите задачу — мы подготовим структурированный
-                дизайн‑запрос.
+                Опишите продукт или фичу — мы разложим пользователей на 4–5
+                сегментов в формате JTBD.
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -267,42 +203,23 @@ export default function Home() {
           <section className="grid gap-6 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="block text-xs font-medium text-zinc-600">
-                  Макеты (1–10 изображений)
-                </label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleFilesChange}
-                    className="block w-full cursor-pointer text-xs text-zinc-700 file:mr-3 file:rounded-md file:border file:border-zinc-200 file:bg-white file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-zinc-800 hover:file:bg-zinc-50"
-                  />
-                </div>
-                <p className="text-[11px] leading-relaxed text-zinc-500">
-                  Изображения не уходят на сервер как файлы — они превращаются в
-                  dataURL прямо в браузере.
-                </p>
-              </div>
-
-              <div className="space-y-2">
                 <label
-                  htmlFor="featureRequest"
+                  htmlFor="segments-input"
                   className="block text-xs font-medium text-zinc-600"
                 >
-                  Запрос (featureRequest)
+                  Описание продукта / фичи
                 </label>
                 <textarea
-                  id="featureRequest"
-                  value={featureRequest}
-                  onChange={(e) => setFeatureRequest(e.target.value)}
+                  id="segments-input"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
                   rows={8}
                   className={`w-full resize-none rounded-md border bg-zinc-50/60 px-3 py-2 text-xs outline-none transition focus:ring-0 ${
                     theme === "dark"
                       ? "border-zinc-700 bg-zinc-900/60 text-zinc-50 focus:border-zinc-300"
                       : "border-zinc-200 text-zinc-900 focus:border-zinc-900 focus:bg-white"
                   }`}
-                  placeholder="Опишите, что нужно спроектировать на основе макетов: контекст, целевая аудитория, ограничения, желаемый результат..."
+                  placeholder="Кратко опишите продукт, основные сценарии и метрики успеха. Например: SaaS‑продукт для командной работы над проектами, основная метрика — активные команды и retention."
                 />
               </div>
 
@@ -312,12 +229,35 @@ export default function Home() {
                 </span>
                 <button
                   type="button"
-                  onClick={handleDesign}
-                  disabled={isDesigning}
+                  onClick={handleGenerate}
+                  disabled={isLoading}
                   className="inline-flex items-center justify-center rounded-md bg-zinc-900 px-4 py-1.5 text-[13px] font-medium text-zinc-50 shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-500"
                 >
-                  {isDesigning ? "Проектируем..." : "Спроектировать"}
+                  {isLoading ? "Генерируем..." : "Сгенерировать сегменты"}
                 </button>
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  htmlFor="segments-chat-input"
+                  className="block text-xs font-medium text-zinc-600"
+                >
+                  Поле ввода в чате
+                </label>
+                <input
+                  id="segments-chat-input"
+                  type="text"
+                  placeholder="Задайте уточняющий вопрос по сегментам (пока без отправки)…"
+                  className={`w-full rounded-md border px-3 py-2 text-xs outline-none transition ${
+                    theme === "dark"
+                      ? "border-zinc-700 bg-zinc-900/60 text-zinc-50 focus:border-zinc-300"
+                      : "border-zinc-200 bg-white text-zinc-900 focus:border-zinc-900"
+                  }`}
+                />
+                <p className="text-[11px] text-zinc-500">
+                  Сейчас это просто поле для ввода текста в стиле чата. Позже его
+                  можно связать с отдельным эндпоинтом для уточняющих вопросов.
+                </p>
               </div>
             </div>
 
@@ -330,10 +270,10 @@ export default function Home() {
             >
               <div>
                 <h2 className="mb-1 text-[11px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-                  Результат
+                  Сегменты пользователей
                 </h2>
                 <div
-                  className={`min-h-[120px] rounded-md border border-dashed p-2 ${
+                  className={`min-h-[160px] rounded-md border border-dashed p-2 ${
                     theme === "dark"
                       ? "border-zinc-800 bg-zinc-900/70"
                       : "border-zinc-200 bg-white/70"
@@ -345,7 +285,7 @@ export default function Home() {
                     }`}
                   >
                     {result ||
-                      "Здесь появится структурированный ответ дизайнера — в стиле документа Notion."}
+                      "Здесь появится таблица с 4–5 пользовательскими сегментами: краткое название, описание, 3–4 ключевые работы (JTBD) и доля пользователей в %."}
                   </pre>
                 </div>
               </div>
@@ -365,3 +305,4 @@ export default function Home() {
     </div>
   );
 }
+

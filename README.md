@@ -1,36 +1,157 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PM Cursor MVP
 
-## Getting Sta rte d
+Простой MVP‑инструмент для работы с дизайн‑фичами: загружаем макеты, описываем фичу, получаем от LLM структурированный дизайн‑бриф.
 
-First, run the development server:
+Интерфейс сделан в стиле **Notion‑подобного workspace**: слева — панель чатов, справа — рабочая область с формой и результатом.
+
+---
+
+## Функциональность
+
+- **Загрузка макетов**
+  - Поддержка 1–10 изображений.
+  - Загрузка через стандартный `<input type="file" multiple accept="image/*">`.
+  - Изображения конвертируются в `dataURL` в браузере и только потом отправляются на сервер.
+
+- **Описание фичи**
+  - Текстовое поле `Запрос (featureRequest)` со свободной формой.
+  - Рекомендуется описывать контекст, целевую аудиторию, ограничения и желаемый результат.
+
+- **Ответ дизайнера‑LLM**
+  - Серверный роут `POST /api/design` ходит в LLM‑провайдера по OpenAI‑совместимому API (`/chat/completions`).
+  - В `system`‑промпте модель просим выступать как продуктовый дизайнер и отвечать строго структурировано:
+    1. Цель фичи.
+    2. Пользовательские сценарии.
+    3. Основные экраны/секции.
+    4. Требования к UX.
+    5. Риски и компромиссы.
+  - Ответ отображается в отдельном блоке «Результат».
+
+- **Панель чатов**
+  - Слева — список чатов (`Workspace`).
+  - Можно создавать новые чаты (кнопка `+ New chat`).
+  - Пока чаты живут только в стейте клиента, без сохранения истории.
+
+- **Переключение темы**
+  - В хедере справа — кнопка переключения светлой/тёмной темы.
+  - Тема применяется к основным панелям, текстам и блоку результата.
+
+---
+
+## Стек
+
+- **Next.js 16 (App Router)**
+- **React 19**
+- Tailwind CSS (через `@import "tailwindcss"` и `@theme inline` в `globals.css`)
+- Шрифты [Geist](https://vercel.com/font) через `next/font`
+
+---
+
+## Быстрый старт (локально)
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Открой `http://localhost:3000`.
+- Основная логика UI в `app/page.tsx`.
+- API‑роут находится в `app/api/design/route.ts`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Прод‑режим локально
 
-## Learn More
+```bash
+npm install
+npm run build
+npm run start
+# по умолчанию сервер слушает http://localhost:3000
+```
 
-To learn more about Next.js, take a look at the following resources:
+Если порт `3000` занят:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+lsof -i :3000
+kill <PID>
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Конфигурация LLM (env)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+В `.env.local` и в настройках Vercel‑проекта должны быть заданы:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `LLM_API_KEY` — ключ к LLM‑провайдеру.
+- `LLM_BASE_URL` — базовый URL OpenAI‑совместимого API (`https://api.openai.com/v1` или ваш прокси).
+- `LLM_MODEL` — идентификатор модели (опционально, по умолчанию `"gpt-4o-mini"`).
+
+`.env.local`:
+
+```bash
+LLM_API_KEY=...
+LLM_BASE_URL=...
+LLM_MODEL=gpt-4o-mini
+```
+
+Файл `.env.local` **никогда не коммитится** (см. `.gitignore`).
+
+---
+
+## API: `POST /api/design`
+
+- **URL:** `/api/design`
+- **Метод:** `POST`
+- **Тело запроса (JSON):**
+
+```json
+{
+  "featureRequest": "строка, обязательна",
+  "images": ["data:image/png;base64,..."]
+}
+```
+
+- **Условия:**
+  - `featureRequest` должен быть непустой строкой.
+  - `images` — массив хотя бы из одного dataURL.
+
+- **Ответ (успех):**
+
+```json
+{
+  "ok": true,
+  "result": "строка с оформленным ответом дизайнера"
+}
+```
+
+- **Ответ (ошибка):**
+  - `400` — проблемы с входными данными (`featureRequest` или `images`).
+  - `500` — проблемы с env или непредвиденная ошибка.
+  - Прочие статусы — пробрасываются от LLM‑провайдера.
+
+---
+
+## Структура проекта (основное)
+
+- `app/layout.tsx` — корневой layout, подключение шрифтов и `globals.css`.
+- `app/page.tsx` — основной UI (панель чатов, форма, результат, переключатель темы).
+- `app/api/design/route.ts` — серверный эндпоинт, обёртка над LLM.
+- `globals.css` — базовые стили и интеграция Tailwind.
+- `DOCS.md` — подробный контекст проекта и правила для агентов.
+- `RUNBOOK.md` — как расследовать и чинить проблемы на проде.
+- `TODO.md` — ближайшие задачи/бэклог.
+- `CHANGELOG.md` — история изменений по версиям.
+
+---
+
+## Разработка и вклад
+
+- Старайся делать изменения **инкрементальными**.
+- Перед изменениями:
+  - прочитай `DOCS.md` и свежие записи в `CHANGELOG.md`;
+  - посмотри `RUNBOOK.md`, если трогаешь прод.
+- После изменений:
+  - обнови `CHANGELOG.md` (новая версия, пункты);
+  - обнови `TODO.md` (Done/Next/Backlog).
+
+Подробные правила для ИИ‑агентов и людей есть в `DOCS.md` и `CURSOR_CONTEXT.md`.
