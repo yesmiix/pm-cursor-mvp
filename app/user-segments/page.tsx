@@ -2,13 +2,89 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 type SegmentsResponse = {
   ok: boolean;
   result?: string;
   error?: string;
 };
+
+type ParsedSegment = {
+  name: string;
+  description: string;
+  jtbd: string[];
+  percent: string;
+};
+
+function parseSegmentsFromMarkdown(raw: string): {
+  intro: string;
+  segments: ParsedSegment[];
+} {
+  const intro: string[] = [];
+  const tableRows: string[][] = [];
+  const lines = raw.split(/\r?\n/);
+
+  let inTable = false;
+  let headerSkipped = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    const isTableRow = /^\|/.test(trimmed) && /\|$/.test(trimmed);
+    if (isTableRow) {
+      inTable = true;
+      const cells = trimmed
+        .replace(/^\|/, "")
+        .replace(/\|$/, "")
+        .split("|")
+        .map((c) => c.trim());
+      const isSeparator = cells.every((c) => /^[-:\s]+$/.test(c));
+      if (isSeparator) {
+        headerSkipped = true;
+        continue;
+      }
+      const isSeparatorRow = cells.every((c) => /^[-:\s]+$/.test(c));
+      if (isSeparatorRow) {
+        headerSkipped = true;
+        continue;
+      }
+      if (!headerSkipped) {
+        headerSkipped = true;
+        continue;
+      }
+      if (cells.length >= 4 && cells.some((c) => c.length > 0)) {
+        tableRows.push(cells);
+      }
+      continue;
+    }
+
+    if (!inTable && trimmed.length > 0) {
+      intro.push(trimmed);
+    }
+  }
+
+  const segments: ParsedSegment[] = tableRows.map((row) => {
+    const name = (row[0] ?? "").trim();
+    const description = (row[1] ?? "").trim();
+    const jtbdRaw = (row[2] ?? "").trim();
+    const percent = (row[3] ?? "").trim();
+
+    const jtbd = jtbdRaw
+      .split(/\n/)
+      .map((s) => s.replace(/^[-•*]\s*/, "").trim())
+      .filter(Boolean);
+
+    return { name, description, jtbd, percent };
+  });
+
+  return {
+    intro: intro.join(" ").trim(),
+    segments,
+  };
+}
 
 export default function UserSegmentsPage() {
   const [input, setInput] = useState("");
@@ -77,6 +153,13 @@ export default function UserSegmentsPage() {
       setIsLoading(false);
     }
   }, [input]);
+
+  const parsed = useMemo(() => {
+    if (!result.trim()) return null;
+    const { intro, segments } = parseSegmentsFromMarkdown(result);
+    if (segments.length === 0) return null;
+    return { intro, segments };
+  }, [result]);
 
   return (
     <div
@@ -200,7 +283,7 @@ export default function UserSegmentsPage() {
             </div>
           </header>
 
-          <section className="grid gap-6 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+          <section className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,280px)]">
             <div className="space-y-4">
               <div className="space-y-2">
                 <label
@@ -262,43 +345,190 @@ export default function UserSegmentsPage() {
             </div>
 
             <div
-              className={`space-y-4 rounded-md border p-3 ${
+              className={`rounded-md border p-3 ${
                 theme === "dark"
                   ? "border-zinc-800 bg-zinc-900/60"
                   : "border-zinc-200 bg-zinc-50/80"
               }`}
             >
-              <div>
-                <h2 className="mb-1 text-[11px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-                  Сегменты пользователей
-                </h2>
-                <div
-                  className={`min-h-[160px] rounded-md border border-dashed p-2 ${
-                    theme === "dark"
-                      ? "border-zinc-800 bg-zinc-900/70"
-                      : "border-zinc-200 bg-white/70"
-                  }`}
-                >
-                  <pre
-                    className={`whitespace-pre-wrap break-words text-[12px] leading-relaxed ${
-                      theme === "dark" ? "text-zinc-100" : "text-zinc-800"
-                    }`}
-                  >
-                    {result ||
-                      "Здесь появится таблица с 4–5 пользовательскими сегментами: краткое название, описание, 3–4 ключевые работы (JTBD) и доля пользователей в %."}
-                  </pre>
-                </div>
-              </div>
-
-              <div>
-                <h2 className="mb-1 text-[11px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-                  Ошибки
-                </h2>
-                <div className="min-h-[40px] rounded-md border border-red-200 bg-red-50/80 px-3 py-2 text-[11px] text-red-700">
-                  {error || "Ошибок нет."}
-                </div>
+              <h2 className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+                Ошибки
+              </h2>
+              <div className="min-h-[40px] rounded-md border border-red-200 bg-red-50/80 px-3 py-2 text-[11px] text-red-700">
+                {error || "Ошибок нет."}
               </div>
             </div>
+          </section>
+
+          <section
+            className={`mt-8 rounded-xl border p-5 ${
+              theme === "dark"
+                ? "border-zinc-800 bg-zinc-900/40"
+                : "border-zinc-200 bg-zinc-50/60"
+            }`}
+          >
+            <h2 className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+              Сегменты пользователей
+            </h2>
+
+            {parsed ? (
+              <div className="space-y-4">
+                {parsed.intro && (
+                  <p
+                    className={`rounded-lg border-l-4 pl-3 text-[13px] leading-relaxed ${
+                      theme === "dark"
+                        ? "border-zinc-600 text-zinc-300"
+                        : "border-zinc-300 text-zinc-700"
+                    }`}
+                  >
+                    {parsed.intro}
+                  </p>
+                )}
+
+                <div
+                  className={`overflow-hidden rounded-lg border ${
+                    theme === "dark"
+                      ? "border-zinc-700 bg-zinc-900/80"
+                      : "border-zinc-200 bg-white"
+                  }`}
+                >
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[640px] border-collapse text-left text-[13px]">
+                      <thead>
+                        <tr
+                          className={
+                            theme === "dark"
+                              ? "border-b border-zinc-700 bg-zinc-800/80"
+                              : "border-b border-zinc-200 bg-zinc-100/80"
+                          }
+                        >
+                          <th
+                            className={`px-4 py-3 font-semibold ${
+                              theme === "dark"
+                                ? "text-zinc-200"
+                                : "text-zinc-800"
+                            }`}
+                          >
+                            Сегмент
+                          </th>
+                          <th
+                            className={`px-4 py-3 font-semibold ${
+                              theme === "dark"
+                                ? "text-zinc-200"
+                                : "text-zinc-800"
+                            }`}
+                          >
+                            Описание
+                          </th>
+                          <th
+                            className={`px-4 py-3 font-semibold ${
+                              theme === "dark"
+                                ? "text-zinc-200"
+                                : "text-zinc-800"
+                            }`}
+                          >
+                            Работы (JTBD)
+                          </th>
+                          <th
+                            className={`w-24 px-4 py-3 text-right font-semibold ${
+                              theme === "dark"
+                                ? "text-zinc-200"
+                                : "text-zinc-800"
+                            }`}
+                          >
+                            % пользователей
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {parsed.segments.map((seg, idx) => (
+                          <tr
+                            key={idx}
+                            className={
+                              theme === "dark"
+                                ? "border-b border-zinc-800 hover:bg-zinc-800/50"
+                                : "border-b border-zinc-100 hover:bg-zinc-50/80"
+                            }
+                          >
+                            <td
+                              className={`px-4 py-3 font-medium ${
+                                theme === "dark"
+                                  ? "text-zinc-100"
+                                  : "text-zinc-900"
+                              }`}
+                            >
+                              {seg.name}
+                            </td>
+                            <td
+                              className={`max-w-[280px] px-4 py-3 leading-relaxed ${
+                                theme === "dark"
+                                  ? "text-zinc-300"
+                                  : "text-zinc-600"
+                              }`}
+                            >
+                              {seg.description}
+                            </td>
+                            <td
+                              className={`px-4 py-3 ${
+                                theme === "dark"
+                                  ? "text-zinc-300"
+                                  : "text-zinc-600"
+                              }`}
+                            >
+                              <ul className="list-inside list-disc space-y-0.5 text-[12px]">
+                                {seg.jtbd.length > 0
+                                  ? seg.jtbd.map((j, i) => (
+                                      <li key={i}>{j}</li>
+                                    ))
+                                  : "—"}
+                              </ul>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <span
+                                className={`inline-flex items-center rounded-md px-2 py-0.5 text-[12px] font-medium ${
+                                  theme === "dark"
+                                    ? "bg-zinc-700 text-zinc-100"
+                                    : "bg-zinc-200 text-zinc-800"
+                                }`}
+                              >
+                                {seg.percent}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            ) : result ? (
+              <div
+                className={`min-h-[120px] rounded-lg border border-dashed p-4 ${
+                  theme === "dark"
+                    ? "border-zinc-700 bg-zinc-900/70"
+                    : "border-zinc-200 bg-white/70"
+                }`}
+              >
+                <pre
+                  className={`whitespace-pre-wrap break-words text-[12px] leading-relaxed ${
+                    theme === "dark" ? "text-zinc-100" : "text-zinc-800"
+                  }`}
+                >
+                  {result}
+                </pre>
+              </div>
+            ) : (
+              <p
+                className={`rounded-lg border border-dashed py-8 text-center text-[13px] ${
+                  theme === "dark"
+                    ? "border-zinc-700 text-zinc-500"
+                    : "border-zinc-200 text-zinc-500"
+                }`}
+              >
+                Нажмите «Сгенерировать сегменты» — здесь появится таблица с
+                сегментами в формате Notion.
+              </p>
+            )}
           </section>
         </main>
       </div>
