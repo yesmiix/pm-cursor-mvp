@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useState } from "react";
+import { AppHeader } from "../components/AppHeader";
 
 type AskResponse = {
   ok: boolean;
@@ -50,81 +50,27 @@ export default function AskPage() {
     }
   }, [question]);
 
-  const linkClass = (path: string) =>
-    pathname === path
-      ? theme === "dark"
-        ? "bg-zinc-800 text-zinc-50"
-        : "bg-zinc-900 text-zinc-50"
-      : theme === "dark"
-        ? "text-zinc-300 hover:bg-zinc-800/80"
-        : "text-zinc-600 hover:bg-zinc-100";
-
   return (
     <div
-      className={`flex min-h-screen px-4 py-4 font-sans text-sm transition-colors ${
+      className={`flex min-h-screen flex-col font-sans text-sm transition-colors ${
         theme === "dark" ? "bg-zinc-950 text-zinc-50" : "bg-white text-zinc-900"
       }`}
     >
-      <div className="mx-auto w-full max-w-3xl">
+      <div className="mx-auto w-full max-w-6xl flex-1 px-6 py-5">
+        <AppHeader
+          pathname={pathname ?? ""}
+          theme={theme}
+          setTheme={setTheme}
+          title="Спросить по документу"
+          description="Ответы только по загруженному документу. Сначала сохраните документ на странице «База знаний»."
+        />
         <main
-          className={`rounded-xl border p-5 shadow-sm backdrop-blur ${
+          className={`card mt-6 rounded-xl border p-6 ${
             theme === "dark"
               ? "border-zinc-800 bg-zinc-900/60"
-              : "border-zinc-200 bg-white/70"
+              : "border-zinc-200 bg-white"
           }`}
         >
-          <header
-            className={`mb-6 flex items-center justify-between gap-3 border-b pb-3 ${
-              theme === "dark" ? "border-zinc-800" : "border-zinc-200"
-            }`}
-          >
-            <div>
-              <h1 className="text-[26px] font-semibold tracking-tight">
-                Спросить по документу
-              </h1>
-              <p
-                className={`mt-1 text-xs ${
-                  theme === "dark" ? "text-zinc-400" : "text-zinc-500"
-                }`}
-              >
-                Ответы только по загруженному документу. Сначала сохраните документ на странице «База знаний».
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <nav className="flex items-center gap-1 text-[11px] font-medium">
-                <Link href="/" className={`rounded-md px-2 py-1 transition ${linkClass("/")}`}>
-                  Design Brief
-                </Link>
-                <Link href="/user-segments" className={`rounded-md px-2 py-1 transition ${linkClass("/user-segments")}`}>
-                  User Segments
-                </Link>
-                <Link href="/kb" className={`rounded-md px-2 py-1 transition ${linkClass("/kb")}`}>
-                  База знаний
-                </Link>
-                <Link href="/ask" className={`rounded-md px-2 py-1 transition ${linkClass("/ask")}`}>
-                  Спросить
-                </Link>
-                <Link href="/backlog" className={`rounded-md px-2 py-1 transition ${linkClass("/backlog")}`}>
-                  Backlog
-                </Link>
-                <Link href="/feedback" className={`rounded-md px-2 py-1 transition ${linkClass("/feedback")}`}>
-                  User Feedback
-                </Link>
-              </nav>
-              <button
-                type="button"
-                onClick={() => setTheme((p) => (p === "light" ? "dark" : "light"))}
-                className={`inline-flex items-center justify-center rounded-md border px-3 py-1.5 text-[11px] font-medium transition ${
-                  theme === "dark"
-                    ? "border-zinc-700 bg-zinc-900 text-zinc-100 hover:bg-zinc-800"
-                    : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
-                }`}
-              >
-                {theme === "dark" ? "Dark theme" : "Light theme"}
-              </button>
-            </div>
-          </header>
-
           <section className="space-y-6">
             <div className="space-y-2">
               <label className="block text-xs font-medium text-zinc-600">
@@ -135,35 +81,35 @@ export default function AskPage() {
                 onChange={(e) => setQuestion(e.target.value)}
                 rows={3}
                 placeholder="Задайте вопрос по содержимому документа..."
-                className={`w-full resize-none rounded-md border bg-zinc-50/60 px-3 py-2 text-xs outline-none transition focus:ring-0 ${
+                className={`input-smooth w-full resize-none rounded-lg border px-3 py-2 text-xs ${
                   theme === "dark"
-                    ? "border-zinc-700 bg-zinc-900/60 text-zinc-50 placeholder:text-zinc-500 focus:border-zinc-300"
-                    : "border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:bg-white"
+                    ? "border-zinc-700 bg-zinc-900/60 text-zinc-50 placeholder:text-zinc-500"
+                    : "border-zinc-200 text-zinc-900 placeholder:text-zinc-400 bg-white"
                 }`}
               />
               <button
                 type="button"
                 onClick={handleAsk}
                 disabled={loading}
-                className="inline-flex items-center justify-center rounded-md bg-zinc-900 px-4 py-1.5 text-[13px] font-medium text-zinc-50 shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-500"
+                className="btn-primary rounded-lg bg-zinc-900 px-5 py-2 text-[13px] font-medium text-zinc-50 shadow-sm hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-500"
               >
                 {loading ? "Ищем ответ…" : "Спросить"}
               </button>
             </div>
 
             {error && (
-              <div className="rounded-md border border-red-200 bg-red-50/80 px-3 py-2 text-[11px] text-red-700">
+              <div className="rounded-lg border border-red-200 bg-red-50/90 px-4 py-2.5 text-[11px] text-red-700 shadow-sm">
                 {error}
               </div>
             )}
 
             {answer && (
-              <div className="space-y-2">
-                <h2 className="text-[11px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+              <div className="space-y-2" style={{ animation: "fade-in 0.2s ease-out" }}>
+                <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
                   Ответ
                 </h2>
                 <div
-                  className={`min-h-[80px] rounded-md border p-3 ${
+                  className={`card min-h-[80px] rounded-lg border p-4 ${
                     theme === "dark"
                       ? "border-zinc-800 bg-zinc-900/70"
                       : "border-zinc-200 bg-zinc-50/80"
@@ -181,15 +127,15 @@ export default function AskPage() {
             )}
 
             {chunks.length > 0 && (
-              <div className="space-y-2">
-                <h2 className="text-[11px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+              <div className="space-y-2" style={{ animation: "fade-in 0.2s ease-out" }}>
+                <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
                   Использованный контекст (чанки)
                 </h2>
                 <div className="space-y-2">
                   {chunks.map((c, i) => (
                     <div
                       key={i}
-                      className={`rounded-md border p-2 text-[11px] ${
+                      className={`card rounded-lg border p-3 text-[11px] ${
                         theme === "dark"
                           ? "border-zinc-700 bg-zinc-900/50 text-zinc-300"
                           : "border-zinc-200 bg-zinc-50/80 text-zinc-700"

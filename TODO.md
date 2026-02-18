@@ -12,6 +12,8 @@
 - [ ] Страница с документацией/FAQ прямо в продукте (с выжимкой из `DOCS.md`).
 
 ## Done
+- [x] Ровный layout: общий AppHeader, один контейнер и сетка на всех страницах; элементы ввода и кнопки в одних и тех же местах (items-end, единые отступы).
+- [x] Единый дизайн (LinkedIn/Notion/Jira): btn-primary/btn-secondary, card, nav-link, input-smooth на всех страницах; кнопки не прыгают, анимация fade-in.
 - [x] User Feedback: страница /feedback — сегменты, raw entries, User pains (LLM), Generate JTBD feedback, Save as raw, Export JSON; хранение fb:*, промпты FEEDBACK_PROMPTS.md.
 - [x] Backlog: страница /backlog с колонками (Backlog, To Do, In Progress, Done), добавление/перемещение/удаление карточек, кнопка Generate по документу из /kb, промпт в BACKLOG_GENERATE_PROMPT.md.
 - [x] One-doc RAG MVP: /kb (документ), /ask (вопрос по документу), API kb/set, kb/get, kb/clear, ask.

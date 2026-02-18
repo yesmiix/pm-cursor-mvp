@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useState } from "react";
+import { AppHeader } from "./components/AppHeader";
 
 type DesignResponse = {
   ok: boolean;
@@ -142,29 +143,37 @@ export default function Home() {
 
   return (
     <div
-      className={`flex min-h-screen px-4 py-4 font-sans text-sm transition-colors ${
+      className={`flex min-h-screen flex-col font-sans text-sm transition-colors ${
         theme === "dark"
           ? "bg-zinc-950 text-zinc-50"
           : "bg-white text-zinc-900"
       }`}
     >
-      <div className="mx-auto flex w-full max-w-6xl gap-3">
+      <div className="mx-auto w-full max-w-6xl flex-1 px-6 py-5">
+        <AppHeader
+          pathname={pathname ?? ""}
+          theme={theme}
+          setTheme={setTheme}
+          title="PM Cursor MVP"
+          description="Загрузите макеты и опишите задачу — мы подготовим структурированный дизайн‑запрос."
+        />
+        <div className="mt-6 flex gap-6">
         <aside
-          className={`hidden w-64 flex-shrink-0 flex-col rounded-lg px-2 py-3 sm:flex ${
-            theme === "dark" ? "bg-zinc-900/60" : "bg-zinc-100/80"
+          className={`card hidden w-64 flex-shrink-0 flex-col rounded-xl border px-3 py-4 sm:flex ${
+            theme === "dark" ? "border-zinc-800 bg-zinc-900/70" : "border-zinc-200 bg-white"
           }`}
         >
-          <div className="mb-3 flex items-center justify-between gap-2 px-2">
-            <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-zinc-500">
+          <div className="mb-3 flex items-center justify-between gap-2 px-1">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
               Workspace
             </span>
             <button
               type="button"
               onClick={handleNewChat}
-              className={`inline-flex items-center justify-center rounded-md border px-2 py-1 text-[11px] font-medium shadow-sm ${
+              className={`btn-secondary rounded-lg border px-2.5 py-1.5 text-[11px] font-medium ${
                 theme === "dark"
-                  ? "border-zinc-700 bg-zinc-900 text-zinc-100 hover:bg-zinc-800"
-                  : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
+                  ? "border-zinc-600 bg-zinc-800 text-zinc-100 hover:bg-zinc-700"
+                  : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300"
               }`}
             >
               + New chat
@@ -176,14 +185,14 @@ export default function Home() {
                 key={chat.id}
                 type="button"
                 onClick={() => handleSelectChat(chat.id)}
-                className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-[13px] transition ${
+                className={`nav-link flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[13px] ${
                   chat.id === activeChatId
                     ? theme === "dark"
-                      ? "bg-zinc-800 text-zinc-50 shadow-sm"
-                      : "bg-white text-zinc-900 shadow-sm"
+                      ? "bg-zinc-800 text-zinc-50 shadow-inner"
+                      : "bg-zinc-100 text-zinc-900 shadow-sm"
                     : theme === "dark"
                       ? "text-zinc-300 hover:bg-zinc-800/70"
-                      : "text-zinc-700 hover:bg-zinc-200/80"
+                      : "text-zinc-700 hover:bg-zinc-100"
                 }`}
               >
                 <span className="truncate">{chat.title}</span>
@@ -193,133 +202,12 @@ export default function Home() {
         </aside>
 
         <main
-          className={`flex-1 rounded-xl border p-5 shadow-sm backdrop-blur ${
+          className={`card flex-1 min-w-0 rounded-xl border p-6 ${
             theme === "dark"
               ? "border-zinc-800 bg-zinc-900/60"
-              : "border-zinc-200 bg-white/70"
+              : "border-zinc-200 bg-white"
           }`}
         >
-          <header
-            className={`mb-6 flex items-center justify-between gap-3 border-b pb-3 ${
-              theme === "dark" ? "border-zinc-800" : "border-zinc-200"
-            }`}
-          >
-            <div>
-              <h1 className="text-[26px] font-semibold tracking-tight">
-                PM Cursor MVP
-              </h1>
-              <p
-                className={`mt-1 text-xs ${
-                  theme === "dark" ? "text-zinc-400" : "text-zinc-500"
-                }`}
-              >
-                Загрузите макеты и опишите задачу — мы подготовим структурированный
-                дизайн‑запрос.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <nav className="flex items-center gap-1 text-[11px] font-medium">
-                <Link
-                  href="/"
-                  className={`rounded-md px-2 py-1 transition ${
-                    pathname === "/"
-                      ? theme === "dark"
-                        ? "bg-zinc-800 text-zinc-50"
-                        : "bg-zinc-900 text-zinc-50"
-                      : theme === "dark"
-                        ? "text-zinc-300 hover:bg-zinc-800/80"
-                        : "text-zinc-600 hover:bg-zinc-100"
-                  }`}
-                >
-                  Design Brief
-                </Link>
-                <Link
-                  href="/user-segments"
-                  className={`rounded-md px-2 py-1 transition ${
-                    pathname?.startsWith("/user-segments")
-                      ? theme === "dark"
-                        ? "bg-zinc-800 text-zinc-50"
-                        : "bg-zinc-900 text-zinc-50"
-                      : theme === "dark"
-                        ? "text-zinc-300 hover:bg-zinc-800/80"
-                        : "text-zinc-600 hover:bg-zinc-100"
-                  }`}
-                >
-                  User Segments
-                </Link>
-                <Link
-                  href="/kb"
-                  className={`rounded-md px-2 py-1 transition ${
-                    pathname?.startsWith("/kb")
-                      ? theme === "dark"
-                        ? "bg-zinc-800 text-zinc-50"
-                        : "bg-zinc-900 text-zinc-50"
-                      : theme === "dark"
-                        ? "text-zinc-300 hover:bg-zinc-800/80"
-                        : "text-zinc-600 hover:bg-zinc-100"
-                  }`}
-                >
-                  База знаний
-                </Link>
-                <Link
-                  href="/ask"
-                  className={`rounded-md px-2 py-1 transition ${
-                    pathname?.startsWith("/ask")
-                      ? theme === "dark"
-                        ? "bg-zinc-800 text-zinc-50"
-                        : "bg-zinc-900 text-zinc-50"
-                      : theme === "dark"
-                        ? "text-zinc-300 hover:bg-zinc-800/80"
-                        : "text-zinc-600 hover:bg-zinc-100"
-                  }`}
-                >
-                  Спросить
-                </Link>
-                <Link
-                  href="/backlog"
-                  className={`rounded-md px-2 py-1 transition ${
-                    pathname?.startsWith("/backlog")
-                      ? theme === "dark"
-                        ? "bg-zinc-800 text-zinc-50"
-                        : "bg-zinc-900 text-zinc-50"
-                      : theme === "dark"
-                        ? "text-zinc-300 hover:bg-zinc-800/80"
-                        : "text-zinc-600 hover:bg-zinc-100"
-                  }`}
-                >
-                  Backlog
-                </Link>
-                <Link
-                  href="/feedback"
-                  className={`rounded-md px-2 py-1 transition ${
-                    pathname?.startsWith("/feedback")
-                      ? theme === "dark"
-                        ? "bg-zinc-800 text-zinc-50"
-                        : "bg-zinc-900 text-zinc-50"
-                      : theme === "dark"
-                        ? "text-zinc-300 hover:bg-zinc-800/80"
-                        : "text-zinc-600 hover:bg-zinc-100"
-                  }`}
-                >
-                  User Feedback
-                </Link>
-              </nav>
-              <button
-                type="button"
-                onClick={() =>
-                  setTheme((prev) => (prev === "light" ? "dark" : "light"))
-                }
-                className={`inline-flex items-center justify-center rounded-md border px-3 py-1.5 text-[11px] font-medium transition ${
-                  theme === "dark"
-                    ? "border-zinc-700 bg-zinc-900 text-zinc-100 hover:bg-zinc-800"
-                    : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
-                }`}
-              >
-                {theme === "dark" ? "Dark theme" : "Light theme"}
-              </button>
-            </div>
-          </header>
-
           <section className="grid gap-6 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
             <div className="space-y-4">
               <div className="space-y-2">
@@ -353,16 +241,16 @@ export default function Home() {
                   value={featureRequest}
                   onChange={(e) => setFeatureRequest(e.target.value)}
                   rows={8}
-                  className={`w-full resize-none rounded-md border bg-zinc-50/60 px-3 py-2 text-xs outline-none transition focus:ring-0 ${
+                  className={`input-smooth w-full resize-none rounded-lg border px-3 py-2 text-xs ${
                     theme === "dark"
-                      ? "border-zinc-700 bg-zinc-900/60 text-zinc-50 focus:border-zinc-300"
-                      : "border-zinc-200 text-zinc-900 focus:border-zinc-900 focus:bg-white"
+                      ? "border-zinc-700 bg-zinc-900/60 text-zinc-50"
+                      : "border-zinc-200 text-zinc-900 bg-white"
                   }`}
                   placeholder="Опишите, что нужно спроектировать на основе макетов: контекст, целевая аудитория, ограничения, желаемый результат..."
                 />
               </div>
 
-              <div className="flex items-center justify-between gap-4 border-t border-zinc-200 pt-3">
+              <div className="flex flex-wrap items-end justify-between gap-4 border-t border-zinc-200 pt-4">
                 <span className="text-[11px] text-zinc-500">
                   Чат: {chats.find((c) => c.id === activeChatId)?.title}
                 </span>
@@ -370,7 +258,7 @@ export default function Home() {
                   type="button"
                   onClick={handleDesign}
                   disabled={isDesigning}
-                  className="inline-flex items-center justify-center rounded-md bg-zinc-900 px-4 py-1.5 text-[13px] font-medium text-zinc-50 shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-500"
+                  className="btn-primary rounded-lg bg-zinc-900 px-5 py-2 text-[13px] font-medium text-zinc-50 shadow-sm hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-500"
                 >
                   {isDesigning ? "Проектируем..." : "Спроектировать"}
                 </button>
@@ -378,10 +266,10 @@ export default function Home() {
             </div>
 
             <div
-              className={`space-y-4 rounded-md border p-3 ${
+              className={`card space-y-4 rounded-lg border p-4 ${
                 theme === "dark"
                   ? "border-zinc-800 bg-zinc-900/60"
-                  : "border-zinc-200 bg-zinc-50/80"
+                  : "border-zinc-200 bg-white"
               }`}
             >
               <div>
@@ -389,10 +277,10 @@ export default function Home() {
                   Результат
                 </h2>
                 <div
-                  className={`min-h-[120px] rounded-md border border-dashed p-2 ${
+                  className={`card min-h-[120px] rounded-lg border border-dashed p-3 ${
                     theme === "dark"
                       ? "border-zinc-800 bg-zinc-900/70"
-                      : "border-zinc-200 bg-white/70"
+                      : "border-zinc-200 bg-white"
                   }`}
                 >
                   <pre
@@ -410,13 +298,14 @@ export default function Home() {
                 <h2 className="mb-1 text-[11px] font-medium uppercase tracking-[0.16em] text-zinc-500">
                   Ошибки
                 </h2>
-                <div className="min-h-[40px] rounded-md border border-red-200 bg-red-50/80 px-3 py-2 text-[11px] text-red-700">
+                <div className="min-h-[40px] rounded-lg border border-red-200 bg-red-50/90 px-3 py-2 text-[11px] text-red-700 shadow-sm">
                   {error || "Ошибок нет."}
                 </div>
               </div>
             </div>
           </section>
         </main>
+        </div>
       </div>
     </div>
   );
